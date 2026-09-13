@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>카카오 장소 검색</title>
+  <style>
+    body {
+      font-family: -apple-system, "Malgun Gothic", sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    h1 {
+      font-size: 20px;
+    }
+    form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      font-size: 15px;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .place {
+      border-bottom: 1px solid #eee;
+      padding: 12px 0;
+    }
+    .place-name {
+      font-weight: bold;
+    }
+    .place-info {
+      color: #555;
+      font-size: 14px;
+    }
+    #message {
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <h1>카카오 로컬 키워드 검색</h1>
+  <form id="search-form">
+    <input type="text" id="query" placeholder="예: 강남 스타벅스" autofocus />
+    <button type="submit">검색</button>
+  </form>
+  <div id="message"></div>
+  <div id="results"></div>
+
+  <script>
+    const form = document.getElementById("search-form");
+    const resultsEl = document.getElementById("results");
+    const messageEl = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const query = document.getElementById("query").value.trim();
+      resultsEl.innerHTML = "";
+      messageEl.textContent = "";
+
+      if (!query) {
+        messageEl.textContent = "검색어를 입력해주세요.";
+        return;
+      }
+
+      messageEl.textContent = "검색 중...";
+
+      try {
+        const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          messageEl.textContent = data.error || "오류가 발생했습니다.";
+          return;
+        }
+
+        messageEl.textContent = "";
+
+        if (data.length === 0) {
+          messageEl.textContent = "검색 결과가 없습니다.";
+          return;
+        }
+
+        resultsEl.innerHTML = data
+          .map(
+            (place) => `
+            <div class="place">
+              <div class="place-name">${place.place_name}</div>
+              <div class="place-info">주소: ${place.address_name}</div>
+              <div class="place-info">전화: ${place.phone || "정보 없음"}</div>
+              <div class="place-info"><a href="${place.place_url}" target="_blank">상세보기</a></div>
+            </div>`
+          )
+          .join("");
+      } catch (err) {
+        messageEl.textContent = "요청 중 오류가 발생했습니다.";
+      }
+    });
+  </script>
+</body>
+</html>
